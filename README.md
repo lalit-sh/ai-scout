@@ -37,8 +37,8 @@ A Next.js application featuring two main capabilities:
   - @langchain/anthropic
   - @langchain/community
   - @langchain/langgraph
+- **Search**: Brave Search API
 - **Database**: MongoDB Atlas
-- **Deployment**: AWS Amplify
 
 ## Prerequisites
 
@@ -46,6 +46,7 @@ A Next.js application featuring two main capabilities:
 - npm or yarn
 - MongoDB Atlas account
 - Anthropic API key
+- Brave Search API key
 
 ## Installation
 
@@ -65,12 +66,14 @@ A Next.js application featuring two main capabilities:
    Create a `.env.local` file in the root directory:
    ```env
    ANTHROPIC_API_KEY=your_anthropic_api_key_here
+   BRAVE_SEARCH_API_KEY=your_brave_search_api_key_here
    MONGODB_URI=your_mongodb_connection_string_here
    MONGODB_DB_NAME=ai_scout
    ```
 
    **Getting your API keys:**
    - **Anthropic API Key**: Sign up at [https://console.anthropic.com](https://console.anthropic.com)
+   - **Brave Search API Key**: Get your free API key at [Brave Search API](https://brave.com/search/api/)
    - **MongoDB URI**: Create a free cluster at [MongoDB Atlas](https://www.mongodb.com/cloud/atlas)
 
 4. **Run the development server**
@@ -140,50 +143,31 @@ A Next.js application featuring two main capabilities:
 - Click "View Details" to see full research report
 - Export results as JSON for further analysis
 
-## Deployment to AWS Amplify
+## Deployment
 
-### Prerequisites
-- AWS Account
-- GitHub repository with your code
+This application can be deployed on various platforms:
 
-### Steps
+### Vercel (Recommended)
+1. Push your code to GitHub
+2. Import your repository on [Vercel](https://vercel.com)
+3. Add environment variables:
+   - `ANTHROPIC_API_KEY`
+   - `BRAVE_SEARCH_API_KEY`
+   - `MONGODB_URI`
+   - `MONGODB_DB_NAME`
+4. Deploy
 
-1. **Push code to GitHub**
-   ```bash
-   git add .
-   git commit -m "Initial commit"
-   git push origin main
-   ```
+### AWS Amplify
+1. Push your code to GitHub
+2. Connect your repository in [AWS Amplify Console](https://console.aws.amazon.com/amplify)
+3. Amplify will auto-detect Next.js configuration
+4. Add the same environment variables as above
+5. Deploy
 
-2. **Create Amplify App**
-   - Go to [AWS Amplify Console](https://console.aws.amazon.com/amplify)
-   - Click "New app" → "Host web app"
-   - Connect your GitHub repository
-   - Select the branch to deploy
-
-3. **Configure Build Settings**
-   - Amplify should auto-detect Next.js
-   - The `amplify.yml` file is already configured
-   - Review and confirm
-
-4. **Add Environment Variables**
-   In the Amplify Console, go to App Settings → Environment variables and add:
-   ```
-   ANTHROPIC_API_KEY=your_anthropic_api_key
-   MONGODB_URI=your_mongodb_connection_string
-   MONGODB_DB_NAME=ai_scout
-   ```
-
-5. **Deploy**
-   - Click "Save and deploy"
-   - Wait for the build to complete
-   - Your app will be available at the provided URL
-
-### Important Notes for Amplify Deployment
-
-- **API Routes**: Next.js API routes work as serverless functions on Amplify
-- **MongoDB Connection**: Use connection pooling (already implemented) to avoid connection limits
-- **Environment Variables**: Never commit `.env.local` to Git - only use Amplify's environment variables
+### Important Deployment Notes
+- **API Routes**: Work as serverless functions
+- **MongoDB Connection**: Connection pooling is already implemented
+- **Environment Variables**: Never commit `.env.local` to Git
 - **Build Time**: First build may take 5-10 minutes
 
 ## Agent Comparison
@@ -206,21 +190,29 @@ A Next.js application featuring two main capabilities:
 
 ## Web Search Integration
 
-**Note**: The current implementation uses placeholder web search functionality. To enable real web search:
+This application uses **Brave Search API** for real-time web searches during company research.
 
-1. **Option 1**: Integrate [Tavily Search API](https://tavily.com)
-   ```bash
-   npm install @tavily/core
-   ```
+### How It Works
+- Both research agents (Anthropic SDK and LangChain) use Brave Search API
+- Each search query returns up to 5 relevant results
+- Results include title, description, and URL
+- Automatic fallback to placeholder data if API key is not configured
 
-2. **Option 2**: Integrate [Serper API](https://serper.dev)
-   ```bash
-   npm install google-search-results-nodejs
-   ```
+### Getting Brave Search API Key
+1. Visit [Brave Search API](https://brave.com/search/api/)
+2. Sign up for a free account (up to 2,000 queries/month free)
+3. Get your API key from the dashboard
+4. Add it to your `.env.local` file as `BRAVE_SEARCH_API_KEY`
 
-3. Update the `webSearch` function in:
-   - `lib/anthropic-agent.ts`
-   - `lib/langchain-agent.ts`
+### Alternative Search APIs
+If you prefer a different search provider, you can replace the `webSearch` or `performWebSearch` functions in:
+- `lib/anthropic-agent.ts`
+- `lib/langchain-agent.ts`
+
+Popular alternatives:
+- [Tavily Search API](https://tavily.com) - AI-optimized search
+- [Serper API](https://serper.dev) - Google Search API
+- [SerpApi](https://serpapi.com) - Multiple search engines
 
 ## MongoDB Schema
 
@@ -285,10 +277,15 @@ npm run lint
 - Anthropic API has rate limits based on your plan
 - Implement request queuing for production use
 
-### Build Errors on Amplify
-- Check build logs in Amplify Console
+### Brave Search API Issues
+- Ensure your API key is correctly set in environment variables
+- Check you haven't exceeded your monthly quota
+- The app will work with fallback data if the API key is missing
+
+### Build Errors
+- Check build logs in your deployment platform
 - Ensure all environment variables are set
-- Verify Node.js version compatibility
+- Verify Node.js version compatibility (18+)
 
 ## Future Enhancements
 

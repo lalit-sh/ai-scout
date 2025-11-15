@@ -11,17 +11,58 @@ interface SearchResult {
   url: string;
 }
 
-// Simulated web search function (in production, integrate with actual search API like Tavily, Serper, etc.)
+// Brave Search API integration
 async function webSearch(query: string): Promise<SearchResult[]> {
-  // This is a placeholder. In production, integrate with a real search API
-  // For now, return structured placeholder data
-  return [
-    {
-      title: `${query} - Latest News`,
-      snippet: `Recent developments and announcements related to ${query}`,
-      url: 'https://example.com',
-    },
-  ];
+  const apiKey = process.env.BRAVE_SEARCH_API_KEY;
+
+  if (!apiKey) {
+    console.warn('BRAVE_SEARCH_API_KEY not set, using fallback search');
+    return [
+      {
+        title: `${query} - Search Result`,
+        snippet: `Information about ${query}. Please configure BRAVE_SEARCH_API_KEY for real search results.`,
+        url: 'https://example.com',
+      },
+    ];
+  }
+
+  try {
+    const response = await fetch(
+      `https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(query)}&count=10`,
+      {
+        headers: {
+          'Accept': 'application/json',
+          'Accept-Encoding': 'gzip',
+          'X-Subscription-Token': apiKey,
+        },
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`Brave Search API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    // Extract web results from Brave Search response
+    const results: SearchResult[] = (data.web?.results || []).map((result: any) => ({
+      title: result.title || '',
+      snippet: result.description || '',
+      url: result.url || '',
+    }));
+
+    return results.slice(0, 5); // Return top 5 results
+  } catch (error) {
+    console.error('Brave Search API error:', error);
+    // Fallback to basic result
+    return [
+      {
+        title: `${query} - Search Result`,
+        snippet: `Search information about ${query}`,
+        url: 'https://example.com',
+      },
+    ];
+  }
 }
 
 const tools: Anthropic.Tool[] = [
